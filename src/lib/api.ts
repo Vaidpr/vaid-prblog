@@ -1,6 +1,5 @@
-
 import { auth } from "./firebase";
-import { mockApi } from "./mockData";
+import { supabase } from "./supabase";
 
 const API_URL = "https://api.example.com"; // Replace with your actual Flask API URL
 
@@ -12,79 +11,81 @@ const getAuthHeader = async () => {
 
 // Fetch all blog posts
 export const fetchPosts = async () => {
-  // For development, use mock data
-  if (process.env.NODE_ENV === "development") {
-    return mockApi.fetchPosts();
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/api/posts`);
-    if (!response.ok) throw new Error('Failed to fetch posts');
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching posts:", error);
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("createdAt", { ascending: false });
+  if (error) {
+    console.error("Error fetching posts from Supabase:", error);
     throw error;
   }
+  return data || [];
 };
 
 // Fetch a single post by ID
 export const fetchPostById = async (id: string) => {
-  // For development, use mock data
-  if (process.env.NODE_ENV === "development") {
-    return mockApi.fetchPostById(id);
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/api/posts/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch post');
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching post ${id}:`, error);
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) {
+    console.error(`Error fetching post ${id} from Supabase:`, error);
     throw error;
   }
+  return data;
 };
 
 // Create a new post
 export const createPost = async (postData: { title: string; content: string }) => {
-  // For development, use mock data
-  if (process.env.NODE_ENV === "development") {
-    return mockApi.createPost(postData);
-  }
+  // Attach author info from Firebase current user
+  const user = auth.currentUser;
+  if (!user) throw new Error("You must be logged in to create a post.");
 
-  try {
-    const headers = await getAuthHeader();
-    const response = await fetch(`${API_URL}/api/posts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      body: JSON.stringify(postData)
-    });
-    if (!response.ok) throw new Error('Failed to create post');
-    return await response.json();
-  } catch (error) {
-    console.error("Error creating post:", error);
+  const { data, error } = await supabase.from("posts").insert([
+    {
+      title: postData.title,
+      content: postData.content,
+      authorId: user.uid,
+      authorName: user.displayName || user.email || "Anonymous",
+      // Add other fields as necessary (views, rating, etc.)
+    },
+  ]).select().single();
+
+  if (error) {
+    console.error("Error creating post in Supabase:", error);
     throw error;
   }
+  return data;
 };
 
 // Fetch user dashboard data
 export const fetchDashboardData = async () => {
-  // For development, use mock data
-  if (process.env.NODE_ENV === "development") {
-    return mockApi.fetchDashboardData();
-  }
+  const user = auth.currentUser;
+  if (!user) throw new Error("You must be logged in to view dashboard data.");
 
-  try {
-    const headers = await getAuthHeader();
-    const response = await fetch(`${API_URL}/api/user/dashboard`, {
-      headers
-    });
-    if (!response.ok) throw new Error('Failed to fetch dashboard data');
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+  // Fetch user's posts
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("authorId", user.uid)
+    .order("createdAt", { ascending: false });
+  if (error) {
+    console.error("Error fetching dashboard data from Supabase:", error);
     throw error;
   }
+
+  // Calculate stats
+  const totalPosts = posts?.length || 0;
+  const totalViews = posts?.reduce((sum, p) => sum + (p.views ?? 0), 0) || 0;
+  const avgRating = posts && posts.length
+    ? posts.reduce((sum, p) => sum + (p.rating ?? 0), 0) / posts.length
+    : 0;
+
+  return {
+    totalPosts,
+    totalViews,
+    averageRating: avgRating,
+    posts: posts || [],
+  };
 };
