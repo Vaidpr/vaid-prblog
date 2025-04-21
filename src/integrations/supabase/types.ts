@@ -17,6 +17,7 @@ export type Database = {
           createdat: string | null
           id: string
           rating: number | null
+          thumbnail: string | null
           title: string
           updatedat: string | null
           views: number | null
@@ -28,6 +29,7 @@ export type Database = {
           createdat?: string | null
           id?: string
           rating?: number | null
+          thumbnail?: string | null
           title: string
           updatedat?: string | null
           views?: number | null
@@ -39,6 +41,7 @@ export type Database = {
           createdat?: string | null
           id?: string
           rating?: number | null
+          thumbnail?: string | null
           title?: string
           updatedat?: string | null
           views?: number | null

@@ -16,6 +16,7 @@ function mapPost(data: any): Post {
     updatedat: data.updatedat,
     rating: data.rating ?? 0,
     views: data.views ?? 0,
+    thumbnail: data.thumbnail ?? "",
   };
 }
 
@@ -47,7 +48,7 @@ export const fetchPostById = async (id: string): Promise<Post | null> => {
 };
 
 // Create a new post
-export const createPost = async (postData: { title: string; content: string }) => {
+export const createPost = async (postData: { title: string; content: string; thumbnail?: string }) => {
   // Get current user session
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("You must be logged in to create a post.");
@@ -56,6 +57,7 @@ export const createPost = async (postData: { title: string; content: string }) =
     {
       title: postData.title,
       content: postData.content,
+      thumbnail: postData.thumbnail || null,
       authorid: user.id,
       authorname: user.email || "Anonymous",
     },

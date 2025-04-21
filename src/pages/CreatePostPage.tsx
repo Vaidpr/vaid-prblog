@@ -13,10 +13,12 @@ import { ArrowLeft } from "lucide-react";
 const CreatePostPage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     title?: string;
     content?: string;
+    thumbnail?: string;
   }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const CreatePostPage = () => {
     const errors: {
       title?: string;
       content?: string;
+      thumbnail?: string;
     } = {};
     
     // Title validation
@@ -41,19 +44,23 @@ const CreatePostPage = () => {
     } else if (content.length < 20) {
       errors.content = "Content must be at least 20 characters";
     }
-    
+
+    // Thumbnail link validation (optional, but must be a Google Drive link if provided)
+    if (thumbnail && !/^https?:\/\/(drive\.google\.com|docs\.google\.com)\//.test(thumbnail.trim())) {
+      errors.thumbnail = "Must be a valid Google Drive link";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     try {
       setIsSubmitting(true);
-      await createPost({ title, content });
+      await createPost({ title, content, thumbnail: thumbnail.trim() });
       toast({
         title: "Success",
         description: "Your post has been created successfully",
@@ -103,6 +110,24 @@ const CreatePostPage = () => {
               />
               {validationErrors.title && (
                 <p className="text-xs text-red-500">{validationErrors.title}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="thumbnail">Thumbnail Google Drive Link</Label>
+              <Input
+                id="thumbnail"
+                value={thumbnail}
+                onChange={(e) => setThumbnail(e.target.value)}
+                placeholder="Paste Google Drive link for thumbnail (optional)"
+                className={validationErrors.thumbnail ? "border-red-500" : ""}
+                type="url"
+                autoComplete="off"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Provide a Google Drive image link to set as your blog's thumbnail (optional).
+              </p>
+              {validationErrors.thumbnail && (
+                <p className="text-xs text-red-500">{validationErrors.thumbnail}</p>
               )}
             </div>
             <div className="space-y-2">

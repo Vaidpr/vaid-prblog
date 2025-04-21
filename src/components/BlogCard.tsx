@@ -23,8 +23,8 @@ const BlogCard = ({ post }: BlogCardProps) => {
       })
     : "";
 
-  // TODO: Update here to get actual post thumbnail field if/when present
-  const thumbnailSrc = PLACEHOLDER_IMAGE;
+  // Use the actual thumbnail if provided, otherwise fallback to placeholder
+  const thumbnailSrc = post.thumbnail && post.thumbnail.length > 5 ? post.thumbnail : PLACEHOLDER_IMAGE;
 
   return (
     <Card className="h-full flex flex-col shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border-gray-200 dark:border-gray-700">
@@ -70,4 +70,3 @@ const BlogCard = ({ post }: BlogCardProps) => {
 };
 
 export default BlogCard;
-
