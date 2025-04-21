@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { auth, logoutUser } from "@/lib/firebase";
 import { User } from "firebase/auth";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, LayoutDashboard, LogIn, LogOut, User as UserIcon, PenSquare } from "lucide-react";
+import { Menu, X, Home, LayoutDashboard, LogIn, LogOut, User as UserIcon, PenSquare, Settings } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +21,6 @@ const Navbar = () => {
     return () => unsubscribe();
   }, []);
 
-  // Handle scroll effect for navbar
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -44,12 +44,10 @@ const Navbar = () => {
     }
   };
 
-  // Check if a link is active
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  // Close mobile menu when changing route
   const handleNavigation = () => {
     setIsOpen(false);
   };
@@ -64,12 +62,10 @@ const Navbar = () => {
     >
       <div className="container mx-auto">
         <div className="flex justify-between items-center">
-          {/* Logo */}
           <Link to="/" className="text-2xl font-bold text-primary">
             Vaidpr
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link 
               to="/" 
@@ -104,12 +100,38 @@ const Navbar = () => {
                 <span>New Post</span>
               </Link>
             )}
-            
+
             {currentUser ? (
-              <Button onClick={handleLogout} variant="outline" className="flex items-center gap-1">
-                <LogOut size={16} />
-                <span>Logout</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button aria-label="Profile" className="focus:outline-none ml-3">
+                    <Avatar>
+                      <AvatarFallback>
+                        <UserIcon size={20} />
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard size={16}/>
+                      <span>Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/account-settings" className="flex items-center gap-2">
+                      <Settings size={16}/>
+                      <span>Account Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600">
+                    <LogOut size={16}/>
+                    <span>Log Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/login">
                 <Button variant="outline" className="flex items-center gap-1">
@@ -118,16 +140,8 @@ const Navbar = () => {
                 </Button>
               </Link>
             )}
-            
-            {currentUser && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <UserIcon size={16} />
-                <span className="truncate max-w-[120px]">{currentUser.email}</span>
-              </div>
-            )}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -139,7 +153,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden mt-4 bg-white dark:bg-gray-900 shadow-lg rounded-lg p-4 absolute left-4 right-4 top-16 z-50">
             <div className="flex flex-col space-y-4">
@@ -179,30 +192,35 @@ const Navbar = () => {
                   <span>New Post</span>
                 </Link>
               )}
+
+              {currentUser && (
+                <>
+                  <Link 
+                    to="/account-settings" 
+                    className="flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    onClick={handleNavigation}
+                  >
+                    <Settings size={18}/>
+                    <span>Account Settings</span>
+                  </Link>
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    className="flex items-center justify-start gap-2 w-full"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </Button>
+                </>
+              )}
               
-              {currentUser ? (
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="flex items-center justify-start gap-2 w-full"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </Button>
-              ) : (
+              {!currentUser && (
                 <Link to="/login" className="w-full" onClick={handleNavigation}>
                   <Button variant="outline" className="flex items-center justify-start gap-2 w-full">
                     <LogIn size={18} />
                     <span>Login</span>
                   </Button>
                 </Link>
-              )}
-              
-              {currentUser && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 py-2 px-3">
-                  <UserIcon size={16} />
-                  <span className="truncate">{currentUser.email}</span>
-                </div>
               )}
             </div>
           </div>
