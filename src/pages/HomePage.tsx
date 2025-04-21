@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchPosts } from "@/lib/api";
@@ -7,6 +6,7 @@ import { Post } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { PenSquare } from "lucide-react";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 
 const HomePage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -15,10 +15,17 @@ const HomePage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setIsAuthenticated(!!session?.user);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session?.user);
     });
-    return () => unsubscribe();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {

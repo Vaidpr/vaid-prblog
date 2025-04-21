@@ -5,10 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Post } from "@/lib/mockData";
 import { Eye, Star } from "lucide-react";
+import ResponsiveImage from "@/components/ResponsiveImage";
 
 interface BlogCardProps {
   post: Post;
 }
+
+const PLACEHOLDER_IMAGE =
+  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&q=80"; // Picked from allowed placeholder_images
 
 const BlogCard = ({ post }: BlogCardProps) => {
   const formattedDate = post.createdat 
@@ -19,8 +23,19 @@ const BlogCard = ({ post }: BlogCardProps) => {
       })
     : "";
 
+  // TODO: Update here to get actual post thumbnail field if/when present
+  const thumbnailSrc = PLACEHOLDER_IMAGE;
+
   return (
     <Card className="h-full flex flex-col shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border-gray-200 dark:border-gray-700">
+      <div className="w-full">
+        <ResponsiveImage
+          src={thumbnailSrc}
+          alt={post.title + " thumbnail"}
+          aspectRatio="video"
+          className="w-full h-40"
+        />
+      </div>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-gray-500 dark:text-gray-400">{formattedDate}</span>
@@ -55,3 +70,4 @@ const BlogCard = ({ post }: BlogCardProps) => {
 };
 
 export default BlogCard;
+
