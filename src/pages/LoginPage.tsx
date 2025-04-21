@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { loginUser, registerUser, auth } from "@/lib/firebase";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { validateForm } from "@/utils/formValidation";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -24,40 +25,34 @@ const LoginPage = () => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
         // User is already logged in, redirect to home or previous location
         const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
         navigate(from, { replace: true });
       }
+    };
+    
+    checkUser();
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      }
     });
-    return () => unsubscribe();
+    
+    return () => subscription.unsubscribe();
   }, [location, navigate]);
 
   // Get redirect path from location state or default to home
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
   // Validate form inputs
-  const validateForm = () => {
-    const errors: {
-      email?: string;
-      password?: string;
-    } = {};
-    
-    // Email validation
-    if (!email) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = "Email is not valid";
-    }
-    
-    // Password validation
-    if (!password) {
-      errors.password = "Password is required";
-    } else if (password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
-    }
-    
+  const validateInputs = () => {
+    const errors = validateForm({ email, password });
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -65,11 +60,17 @@ const LoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateInputs()) return;
 
     try {
       setIsLoading(true);
-      await loginUser(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "You have been logged in successfully",
@@ -78,13 +79,8 @@ const LoginPage = () => {
     } catch (error: any) {
       let errorMessage = "Invalid email or password";
       
-      // Handle different Firebase auth error codes
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = "Invalid email or password";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Too many failed login attempts. Please try again later.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error. Please check your connection.";
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       toast({
@@ -100,28 +96,29 @@ const LoginPage = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateInputs()) return;
 
     try {
       setIsLoading(true);
-      await registerUser(email, password);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
-        description: "Account created successfully. You are now logged in.",
+        description: "Account created successfully. Please check your email to confirm your account.",
       });
-      navigate(from, { replace: true });
     } catch (error: any) {
       let errorMessage = "Failed to create account";
       
-      // Handle different Firebase auth error codes
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "Email is already in use. Please login instead.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Please provide a valid email address.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Please use a stronger password.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error. Please check your connection.";
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       toast({

@@ -1,13 +1,7 @@
-import { auth } from "./firebase";
-import { supabase } from "./supabase";
+
+import { supabase } from "@/integrations/supabase/client";
 
 const API_URL = "https://api.example.com"; // Replace with your actual Flask API URL
-
-// Helper to get auth token
-const getAuthHeader = async () => {
-  const token = await auth.currentUser?.getIdToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 // Fetch all blog posts
 export const fetchPosts = async () => {
@@ -38,16 +32,18 @@ export const fetchPostById = async (id: string) => {
 
 // Create a new post
 export const createPost = async (postData: { title: string; content: string }) => {
-  // Attach author info from Firebase current user
-  const user = auth.currentUser;
-  if (!user) throw new Error("You must be logged in to create a post.");
+  // Get current user session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("You must be logged in to create a post.");
+  
+  const user = session.user;
 
   const { data, error } = await supabase.from("posts").insert([
     {
       title: postData.title,
       content: postData.content,
-      authorId: user.uid,
-      authorName: user.displayName || user.email || "Anonymous",
+      authorId: user.id,
+      authorName: user.email || "Anonymous",
       // Add other fields as necessary (views, rating, etc.)
     },
   ]).select().single();
@@ -61,14 +57,17 @@ export const createPost = async (postData: { title: string; content: string }) =
 
 // Fetch user dashboard data
 export const fetchDashboardData = async () => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("You must be logged in to view dashboard data.");
+  // Get current user session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("You must be logged in to view dashboard data.");
+  
+  const user = session.user;
 
   // Fetch user's posts
   const { data: posts, error } = await supabase
     .from("posts")
     .select("*")
-    .eq("authorId", user.uid)
+    .eq("authorId", user.id)
     .order("createdAt", { ascending: false });
   if (error) {
     console.error("Error fetching dashboard data from Supabase:", error);
