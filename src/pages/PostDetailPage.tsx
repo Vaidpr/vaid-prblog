@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchPostById } from "@/lib/api";
 import { ArrowLeft, Eye, Star, Calendar } from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
+import { Post } from "@/lib/mockData";
 
 const PostDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<Tables<'posts'> | null>(null);
+  const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthor, setIsAuthor] = useState(false);

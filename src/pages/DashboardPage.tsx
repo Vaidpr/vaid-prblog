@@ -118,15 +118,15 @@ const DashboardPage = () => {
                       <td className="py-3 px-4">
                         <div className="font-medium truncate max-w-[250px]">{post.title}</div>
                       </td>
-                      <td className="py-3 px-4 text-center">{post.views}</td>
+                      <td className="py-3 px-4 text-center">{post.views || 0}</td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center">
                           <Star size={16} className="text-yellow-500 mr-1" />
-                          <span>{post.rating.toFixed(1)}</span>
+                          <span>{(post.rating || 0).toFixed(1)}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {new Date(post.createdAt).toLocaleDateString()}
+                        {post.createdat ? new Date(post.createdat).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <Link to={`/posts/${post.id}`}>

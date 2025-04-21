@@ -1,9 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import type { Post, DashboardData } from "@/lib/mockData";
 
 // Fetch all blog posts
-export const fetchPosts = async (): Promise<Tables<'posts'>[]> => {
+export const fetchPosts = async (): Promise<Post[]> => {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
@@ -16,7 +17,7 @@ export const fetchPosts = async (): Promise<Tables<'posts'>[]> => {
 };
 
 // Fetch a single post by ID
-export const fetchPostById = async (id: string): Promise<Tables<'posts'> | null> => {
+export const fetchPostById = async (id: string): Promise<Post | null> => {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
@@ -26,7 +27,7 @@ export const fetchPostById = async (id: string): Promise<Tables<'posts'> | null>
     console.error(`Error fetching post ${id} from Supabase:`, error);
     throw error;
   }
-  return data;
+  return data as Post | null;
 };
 
 // Create a new post
@@ -50,11 +51,12 @@ export const createPost = async (postData: { title: string; content: string }) =
     console.error("Error creating post in Supabase:", error);
     throw error;
   }
-  return data;
+  
+  return data as Post;
 };
 
 // Fetch user dashboard data
-export const fetchDashboardData = async () => {
+export const fetchDashboardData = async (): Promise<DashboardData> => {
   // Get current user session
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("You must be logged in to view dashboard data.");
@@ -86,4 +88,3 @@ export const fetchDashboardData = async () => {
     posts: posts || [],
   };
 };
-
