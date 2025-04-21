@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { auth, logoutUser } from "@/lib/firebase";
-import { User } from "firebase/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Home, LayoutDashboard, LogIn, LogOut, User as UserIcon, PenSquare, Settings } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -9,16 +9,25 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setCurrentUser(user);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setCurrentUser(session?.user || null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user || null);
     });
-    return () => unsubscribe();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -36,7 +45,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await supabase.auth.signOut();
       navigate("/");
       setIsOpen(false);
     } catch (error) {
