@@ -1,14 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
-
-const API_URL = "https://api.example.com"; // Replace with your actual Flask API URL
+import type { Tables } from "@/integrations/supabase/types";
 
 // Fetch all blog posts
-export const fetchPosts = async () => {
+export const fetchPosts = async (): Promise<Tables<'posts'>[]> => {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
-    .order("createdAt", { ascending: false });
+    .order("createdat", { ascending: false });
   if (error) {
     console.error("Error fetching posts from Supabase:", error);
     throw error;
@@ -17,12 +16,12 @@ export const fetchPosts = async () => {
 };
 
 // Fetch a single post by ID
-export const fetchPostById = async (id: string) => {
+export const fetchPostById = async (id: string): Promise<Tables<'posts'> | null> => {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
   if (error) {
     console.error(`Error fetching post ${id} from Supabase:`, error);
     throw error;
@@ -42,11 +41,10 @@ export const createPost = async (postData: { title: string; content: string }) =
     {
       title: postData.title,
       content: postData.content,
-      authorId: user.id,
-      authorName: user.email || "Anonymous",
-      // Add other fields as necessary (views, rating, etc.)
+      authorid: user.id,
+      authorname: user.email || "Anonymous",
     },
-  ]).select().single();
+  ]).select().maybeSingle();
 
   if (error) {
     console.error("Error creating post in Supabase:", error);
@@ -67,8 +65,8 @@ export const fetchDashboardData = async () => {
   const { data: posts, error } = await supabase
     .from("posts")
     .select("*")
-    .eq("authorId", user.id)
-    .order("createdAt", { ascending: false });
+    .eq("authorid", user.id)
+    .order("createdat", { ascending: false });
   if (error) {
     console.error("Error fetching dashboard data from Supabase:", error);
     throw error;
@@ -88,3 +86,4 @@ export const fetchDashboardData = async () => {
     posts: posts || [],
   };
 };
+

@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchPostById } from "@/lib/api";
 import { ArrowLeft, Eye, Star, Calendar } from "lucide-react";
-import { Post } from "@/lib/mockData";
-import { auth } from "@/lib/firebase";
+import type { Tables } from "@/integrations/supabase/types";
 
 const PostDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<Tables<'posts'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthor, setIsAuthor] = useState(false);
@@ -25,12 +24,12 @@ const PostDetailPage = () => {
         setLoading(true);
         const data = await fetchPostById(id);
         setPost(data);
-        
-        // Check if current user is the author
-        const currentUser = auth.currentUser;
-        if (currentUser && data.authorId === "current-user") {
-          setIsAuthor(true);
-        }
+
+        // Check if current user is the author (this logic needs Supabase auth; skipping for now)
+        // const currentUser = ???;
+        // if (currentUser && data && data.authorid === currentUser.id) {
+        //   setIsAuthor(true);
+        // }
       } catch (err) {
         setError("Failed to load this post. It may have been removed or is unavailable.");
         console.error(err);
@@ -70,11 +69,13 @@ const PostDetailPage = () => {
     );
   }
 
-  const formattedDate = new Date(post.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const formattedDate = post.createdat
+    ? new Date(post.createdat).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,7 +96,7 @@ const PostDetailPage = () => {
           <div className="flex flex-wrap items-center text-gray-500 dark:text-gray-400 text-sm mt-3 gap-y-2">
             <div className="flex items-center mr-4">
               <span className="font-medium mr-1">By:</span>
-              <span>{post.authorName}</span>
+              <span>{post.authorname}</span>
             </div>
             <div className="flex items-center mr-4">
               <Calendar size={14} className="mr-1" />
@@ -103,11 +104,11 @@ const PostDetailPage = () => {
             </div>
             <div className="flex items-center mr-4">
               <Eye size={14} className="mr-1" />
-              <span>{post.views} views</span>
+              <span>{post.views ?? 0} views</span>
             </div>
             <div className="flex items-center">
               <Star size={14} className="mr-1 text-yellow-500" />
-              <span>{post.rating.toFixed(1)} rating</span>
+              <span>{(post.rating ?? 0).toFixed(1)} rating</span>
             </div>
           </div>
         </CardHeader>
@@ -122,11 +123,11 @@ const PostDetailPage = () => {
           <div className="flex gap-3">
             <Badge variant="outline" className="flex items-center gap-1">
               <Eye size={14} />
-              <span>{post.views} views</span>
+              <span>{post.views ?? 0} views</span>
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1">
               <Star size={14} className="text-yellow-500" />
-              <span>{post.rating.toFixed(1)} rating</span>
+              <span>{(post.rating ?? 0).toFixed(1)} rating</span>
             </Badge>
           </div>
           
