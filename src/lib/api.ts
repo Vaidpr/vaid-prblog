@@ -1,6 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Post, DashboardData } from "@/lib/mockData";
+import { Constants } from "@/integrations/supabase/types";
 
 // Helper to map Supabase post to app Post type
 function mapPost(data: any): Post {
@@ -14,8 +16,8 @@ function mapPost(data: any): Post {
     createdat: data.createdat,
     updatedat: data.updatedat,
     rating: data.rating ?? 0,
-    views: data.views ?? 0,
     thumbnail: data.thumbnail ?? "",
+    category: data.category || "All",
   };
 }
 
@@ -57,16 +59,20 @@ export const createPost = async (postData: {
   if (!session) throw new Error("You must be logged in to create a post.");
   const user = session.user;
   
-  const { data, error } = await supabase.from("posts").insert([
-    {
-      title: postData.title,
-      content: postData.content,
-      thumbnail: postData.thumbnail || null,
-      category: postData.category,
-      authorid: user.id,
-      authorname: user.email || "Anonymous",
-    },
-  ]).select().maybeSingle();
+  // Ensure the category is a valid enum value
+  const validCategories = Constants.public.Enums.post_category;
+  const category = validCategories.includes(postData.category as any) 
+    ? postData.category 
+    : "All";
+  
+  const { data, error } = await supabase.from("posts").insert({
+    title: postData.title,
+    content: postData.content,
+    thumbnail: postData.thumbnail || null,
+    category: category,
+    authorid: user.id,
+    authorname: user.email || "Anonymous",
+  }).select().maybeSingle();
 
   if (error) {
     console.error("Error creating post in Supabase:", error);
@@ -83,7 +89,7 @@ export const ratePost = async (postId: string, rating: number): Promise<Post> =>
   // First get the current rating
   const { data: currentPost, error: fetchError } = await supabase
     .from("posts")
-    .select("rating, views")
+    .select("rating")
     .eq("id", postId)
     .maybeSingle();
     
@@ -158,14 +164,13 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
   const postList = (posts || []).map(mapPost);
   // Calculate stats
   const totalPosts = postList.length;
-  const totalViews = postList.reduce((sum, p) => sum + (p.views ?? 0), 0);
   const avgRating = postList.length
     ? postList.reduce((sum, p) => sum + (p.rating ?? 0), 0) / postList.length
     : 0;
 
   return {
     totalPosts,
-    totalViews,
+    totalViews: 0, // Keep this value but don't use it
     averageRating: avgRating,
     posts: postList,
   };

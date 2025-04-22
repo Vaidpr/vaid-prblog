@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -126,19 +126,27 @@ const LoginPage = () => {
         // 2. Create the profile with username
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([{ 
+          .insert({
             id: authData.user.id,
             username: username,
             email: email
-          }]);
+          });
         
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // If profile creation fails, we should still let the user know their account was created
+          toast({
+            title: "Registration partially successful",
+            description: "Your account was created but there was an issue with your profile. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created!",
+          });
+        }
       }
-      
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
-      });
       
       navigate("/");
     } catch (error: any) {

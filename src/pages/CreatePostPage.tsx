@@ -18,7 +18,7 @@ const CreatePostPage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState<string>(categories[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     title?: string;
@@ -121,7 +121,10 @@ const CreatePostPage = () => {
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select 
+                value={category} 
+                onValueChange={(value: string) => setCategory(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
