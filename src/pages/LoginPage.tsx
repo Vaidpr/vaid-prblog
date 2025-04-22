@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +18,6 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if user is already logged in
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -73,7 +71,6 @@ const LoginPage = () => {
       
       if (error) throw error;
       
-      // Username is available if no data is returned
       setUsernameAvailable(data === null);
     } catch (error) {
       console.error("Error checking username:", error);
@@ -87,7 +84,6 @@ const LoginPage = () => {
     const value = e.target.value;
     setUsername(value);
     
-    // Debounce the check
     const timeoutId = setTimeout(() => {
       if (value.length >= 3) {
         checkUsernameAvailability(value);
@@ -114,7 +110,6 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -123,7 +118,6 @@ const LoginPage = () => {
       if (authError) throw authError;
       
       if (authData.user) {
-        // 2. Create the profile with username
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -134,7 +128,6 @@ const LoginPage = () => {
         
         if (profileError) {
           console.error("Profile creation error:", profileError);
-          // If profile creation fails, we should still let the user know their account was created
           toast({
             title: "Registration partially successful",
             description: "Your account was created but there was an issue with your profile. Please contact support.",

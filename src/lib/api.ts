@@ -69,7 +69,7 @@ export const createPost = async (postData: {
     title: postData.title,
     content: postData.content,
     thumbnail: postData.thumbnail || null,
-    category: category,
+    category: category as any,
     authorid: user.id,
     authorname: user.email || "Anonymous",
   }).select().maybeSingle();
