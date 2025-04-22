@@ -113,33 +113,19 @@ const LoginPage = () => {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username: username,
+          }
+        }
       });
 
       if (authError) throw authError;
       
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            username: username,
-            email: email
-          });
-        
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          toast({
-            title: "Registration partially successful",
-            description: "Your account was created but there was an issue with your profile. Please contact support.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Registration successful",
-            description: "Your account has been created!",
-          });
-        }
-      }
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created! Please check your email to confirm your registration.",
+      });
       
       navigate("/");
     } catch (error: any) {

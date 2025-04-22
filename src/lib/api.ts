@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Post, DashboardData } from "@/lib/mockData";
@@ -20,6 +19,32 @@ function mapPost(data: any): Post {
     category: data.category || "All",
   };
 }
+
+// Create or update user profile after signup/login
+export const updateUserProfile = async (username: string) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("You must be logged in to update your profile.");
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(
+      { 
+        id: session.user.id, 
+        username,
+        email: session.user.email 
+      },
+      { onConflict: 'id' }
+    )
+    .select()
+    .single();
+    
+  if (error) {
+    console.error("Error updating profile:", error);
+    throw error;
+  }
+  
+  return data;
+};
 
 // Fetch all blog posts
 export const fetchPosts = async (): Promise<Post[]> => {
