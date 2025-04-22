@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, LogIn, LogOut, User as UserIcon, Settings, BookmarkCheck, Category, Search } from "lucide-react";
+import { Menu, X, Home, LogIn, LogOut, User as UserIcon, Settings, BookmarkCheck, Folder, FolderOpen, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -17,14 +16,12 @@ const Navbar = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setCurrentUser(session?.user || null);
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentUser(session?.user || null);
     });
@@ -98,7 +95,7 @@ const Navbar = () => {
                 isActive("/categories") ? "text-primary font-medium" : "text-gray-700 dark:text-gray-300"
               }`}
             >
-              <Category size={16} />
+              <Folder size={16} />
               <span>Categories</span>
             </Link>
             
@@ -142,7 +139,7 @@ const Navbar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/create-post" className="flex items-center gap-2">
-                      <Category size={16}/>
+                      <FolderOpen size={16}/>
                       <span>Create Post</span>
                     </Link>
                   </DropdownMenuItem>
@@ -211,7 +208,7 @@ const Navbar = () => {
                 }`}
                 onClick={handleNavigation}
               >
-                <Category size={18} />
+                <Folder size={18} />
                 <span>Categories</span>
               </Link>
               
@@ -251,7 +248,7 @@ const Navbar = () => {
                     className="flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
                     onClick={handleNavigation}
                   >
-                    <Category size={18}/>
+                    <FolderOpen size={18}/>
                     <span>Create Post</span>
                   </Link>
                   <Link 
