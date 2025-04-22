@@ -21,6 +21,7 @@ export type Database = {
           thumbnail: string | null
           title: string
           updatedat: string | null
+          visibility: string
         }
         Insert: {
           authorid: string
@@ -33,6 +34,7 @@ export type Database = {
           thumbnail?: string | null
           title: string
           updatedat?: string | null
+          visibility?: string
         }
         Update: {
           authorid?: string
@@ -45,6 +47,7 @@ export type Database = {
           thumbnail?: string | null
           title?: string
           updatedat?: string | null
+          visibility?: string
         }
         Relationships: []
       }

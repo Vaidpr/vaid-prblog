@@ -200,3 +200,31 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     posts: postList,
   };
 };
+
+export const updatePostVisibility = async (postId: string, visibility: 'public' | 'private'): Promise<Post> => {
+  const { data, error } = await supabase
+    .from("posts")
+    .update({ visibility })
+    .eq("id", postId)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error(`Error updating post ${postId} visibility:`, error);
+    throw error;
+  }
+  
+  return mapPost(data);
+};
+
+export const deletePost = async (postId: string): Promise<void> => {
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId);
+    
+  if (error) {
+    console.error(`Error deleting post ${postId}:`, error);
+    throw error;
+  }
+};

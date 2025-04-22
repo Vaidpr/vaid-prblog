@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,8 +113,9 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Get the current URL for redirection
-      const redirectUrl = window.location.origin;
+      const domain = window.location.host;
+      const protocol = window.location.protocol;
+      const redirectTo = `${protocol}//${domain}/login`;
       
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -124,7 +124,7 @@ const LoginPage = () => {
           data: {
             username: username,
           },
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectTo
         }
       });
 
@@ -135,7 +135,7 @@ const LoginPage = () => {
         description: "Your account has been created! Please check your email to confirm your registration.",
       });
       
-      navigate("/");
+      navigate("/login");
     } catch (error: any) {
       console.error("Signup error:", error);
       

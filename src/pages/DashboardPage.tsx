@@ -1,17 +1,35 @@
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { fetchDashboardData } from "@/lib/api";
-import { LayoutDashboard, Eye, Star, FileText, PenSquare } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { fetchDashboardData, updatePostVisibility, deletePost } from "@/lib/api";
+import { PenSquare, Star, Eye, MoreHorizontal, Edit, Trash2, EyeOff } from "lucide-react";
 import { DashboardData } from "@/lib/mockData";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -33,6 +51,68 @@ const DashboardPage = () => {
     loadDashboardData();
   }, [toast]);
 
+  const handleVisibilityToggle = async (postId: string, currentVisibility: string) => {
+    try {
+      const newVisibility = currentVisibility === 'public' ? 'private' : 'public';
+      await updatePostVisibility(postId, newVisibility);
+      
+      // Update local state
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          posts: prev.posts.map(post => 
+            post.id === postId 
+              ? { ...post, visibility: newVisibility }
+              : post
+          )
+        };
+      });
+
+      toast({
+        title: "Post visibility updated",
+        description: `Post is now ${newVisibility}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update post visibility",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletePostId) return;
+
+    try {
+      await deletePost(deletePostId);
+      
+      // Update local state
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          posts: prev.posts.filter(post => post.id !== deletePostId),
+          totalPosts: prev.totalPosts - 1
+        };
+      });
+
+      toast({
+        title: "Post deleted",
+        description: "Your post has been successfully deleted",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletePostId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -53,25 +133,14 @@ const DashboardPage = () => {
         </Link>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
-              <FileText size={18} className="text-blue-500" />
+              <PenSquare size={18} className="text-blue-500" />
               <span>Total Posts</span>
             </CardDescription>
             <CardTitle className="text-4xl">{data?.totalPosts || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card className="shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Eye size={18} className="text-green-500" />
-              <span>Total Views</span>
-            </CardDescription>
-            <CardTitle className="text-4xl">{data?.totalViews || 0}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -86,11 +155,10 @@ const DashboardPage = () => {
         </Card>
       </div>
 
-      {/* User's Posts */}
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Your Posts</CardTitle>
-          <CardDescription>Manage and track the performance of your content</CardDescription>
+          <CardDescription>Manage and track your content</CardDescription>
         </CardHeader>
         <CardContent>
           {!data || data.posts.length === 0 ? (
@@ -106,8 +174,8 @@ const DashboardPage = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 font-semibold">Title</th>
-                    <th className="text-center py-3 px-4 font-semibold">Views</th>
                     <th className="text-center py-3 px-4 font-semibold">Rating</th>
+                    <th className="text-center py-3 px-4 font-semibold">Status</th>
                     <th className="text-center py-3 px-4 font-semibold">Date</th>
                     <th className="text-right py-3 px-4 font-semibold">Actions</th>
                   </tr>
@@ -118,7 +186,6 @@ const DashboardPage = () => {
                       <td className="py-3 px-4">
                         <div className="font-medium truncate max-w-[250px]">{post.title}</div>
                       </td>
-                      <td className="py-3 px-4 text-center">{post.views || 0}</td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center">
                           <Star size={16} className="text-yellow-500 mr-1" />
@@ -126,14 +193,44 @@ const DashboardPage = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          post.visibility === 'public' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {post.visibility}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
                         {post.createdat ? new Date(post.createdat).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Link to={`/posts/${post.id}`}>
-                          <Button variant="ghost" size="sm">
-                            View
-                          </Button>
-                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/posts/${post.id}/edit`)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleVisibilityToggle(post.id, post.visibility || 'public')}
+                            >
+                              <EyeOff className="mr-2 h-4 w-4" />
+                              {post.visibility === 'public' ? 'Make Private' : 'Make Public'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => setDeletePostId(post.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -143,6 +240,26 @@ const DashboardPage = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deletePostId} onOpenChange={() => setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your post.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
