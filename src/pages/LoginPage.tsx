@@ -10,6 +10,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/api";
 
+// Helper function to check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  // Get the project URL from the environment or window
+  const supabaseUrl = (window as any).SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = (window as any).SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  
+  // Check if the URL and key are valid (not empty and not placeholders)
+  return (
+    supabaseUrl &&
+    supabaseAnonKey &&
+    !supabaseUrl.includes('placeholder-project') &&
+    !supabaseAnonKey.includes('placeholder-key')
+  );
+};
+
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +51,7 @@ const LoginPage = () => {
 
     try {
       // Check if Supabase is properly configured first
-      if (!supabase.supabaseUrl || supabase.supabaseUrl.includes('placeholder-project')) {
+      if (!isSupabaseConfigured()) {
         throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
       }
 
@@ -118,7 +133,7 @@ const LoginPage = () => {
 
     try {
       // Check if Supabase is properly configured first
-      if (!supabase.supabaseUrl || supabase.supabaseUrl.includes('placeholder-project')) {
+      if (!isSupabaseConfigured()) {
         throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
       }
       
