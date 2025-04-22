@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Post, DashboardData } from "@/lib/mockData";
@@ -48,16 +47,22 @@ export const fetchPostById = async (id: string): Promise<Post | null> => {
 };
 
 // Create a new post
-export const createPost = async (postData: { title: string; content: string; thumbnail?: string }) => {
-  // Get current user session
+export const createPost = async (postData: { 
+  title: string; 
+  content: string; 
+  thumbnail?: string;
+  category: string;
+}) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error("You must be logged in to create a post.");
   const user = session.user;
+  
   const { data, error } = await supabase.from("posts").insert([
     {
       title: postData.title,
       content: postData.content,
       thumbnail: postData.thumbnail || null,
+      category: postData.category,
       authorid: user.id,
       authorname: user.email || "Anonymous",
     },

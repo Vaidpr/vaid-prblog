@@ -6,14 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api";
 import { ArrowLeft } from "lucide-react";
+import { Constants } from "@/integrations/supabase/types";
+
+const categories = Constants.public.Enums.post_category;
 
 const CreatePostPage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [thumbnail, setThumbnail] = useState("");
+  const [category, setCategory] = useState(categories[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     title?: string;
@@ -23,7 +28,6 @@ const CreatePostPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Validate form inputs
   const validateForm = () => {
     const errors: {
       title?: string;
@@ -31,21 +35,18 @@ const CreatePostPage = () => {
       thumbnail?: string;
     } = {};
     
-    // Title validation
     if (!title.trim()) {
       errors.title = "Title is required";
     } else if (title.length < 5) {
       errors.title = "Title must be at least 5 characters";
     }
     
-    // Content validation
     if (!content.trim()) {
       errors.content = "Content is required";
     } else if (content.length < 20) {
       errors.content = "Content must be at least 20 characters";
     }
 
-    // Thumbnail link validation (optional, but must be a Google Drive link if provided)
     if (thumbnail && !/^https?:\/\/(drive\.google\.com|docs\.google\.com)\//.test(thumbnail.trim())) {
       errors.thumbnail = "Must be a valid Google Drive link";
     }
@@ -60,7 +61,12 @@ const CreatePostPage = () => {
 
     try {
       setIsSubmitting(true);
-      await createPost({ title, content, thumbnail: thumbnail.trim() });
+      await createPost({ 
+        title, 
+        content, 
+        thumbnail: thumbnail.trim(),
+        category
+      });
       toast({
         title: "Success",
         description: "Your post has been created successfully",
@@ -112,6 +118,23 @@ const CreatePostPage = () => {
                 <p className="text-xs text-red-500">{validationErrors.title}</p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="thumbnail">Thumbnail Google Drive Link</Label>
               <Input
@@ -130,6 +153,7 @@ const CreatePostPage = () => {
                 <p className="text-xs text-red-500">{validationErrors.thumbnail}</p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="content">Content</Label>
               <Textarea

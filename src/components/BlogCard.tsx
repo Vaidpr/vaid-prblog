@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Post } from "@/lib/mockData";
-import { Eye, Star, Bookmark, BookmarkCheck } from "lucide-react";
+import { Star, Bookmark, BookmarkCheck } from "lucide-react";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ratePost, savePost, unsavePost, isPostSaved } from "@/lib/api";
 
 interface BlogCardProps {
@@ -15,7 +15,7 @@ interface BlogCardProps {
 }
 
 const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&q=80"; // Picked from allowed placeholder_images
+  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&q=80";
 
 const BlogCard = ({ post }: BlogCardProps) => {
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,6 @@ const BlogCard = ({ post }: BlogCardProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if post is saved on component mount
     setSaved(isPostSaved(post.id));
   }, [post.id]);
 
@@ -36,7 +35,6 @@ const BlogCard = ({ post }: BlogCardProps) => {
       })
     : "";
 
-  // Use the actual thumbnail if provided, otherwise fallback to placeholder
   const thumbnailSrc = post.thumbnail && post.thumbnail.length > 5 ? post.thumbnail : PLACEHOLDER_IMAGE;
 
   const handleToggleSave = async () => {
@@ -113,6 +111,9 @@ const BlogCard = ({ post }: BlogCardProps) => {
           <span className="text-xs text-gray-500 dark:text-gray-400">By {post.authorname}</span>
         </div>
         <CardTitle className="text-xl font-bold truncate">{post.title}</CardTitle>
+        <Badge variant="secondary" className="mt-2">
+          {post.category}
+        </Badge>
       </CardHeader>
       <CardContent className="pb-4 flex-grow">
         <p className="text-gray-700 dark:text-gray-300 line-clamp-3">
@@ -120,31 +121,25 @@ const BlogCard = ({ post }: BlogCardProps) => {
         </p>
       </CardContent>
       <CardFooter className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex gap-2">
-          <div className="flex items-center">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => handleRate(star)}
-                disabled={isRating}
-                className="focus:outline-none"
-                aria-label={`Rate ${star} stars`}
-              >
-                <Star
-                  size={14}
-                  className={
-                    rating >= star
-                      ? "text-yellow-500 fill-yellow-500"
-                      : "text-gray-300 dark:text-gray-600"
-                  }
-                />
-              </button>
-            ))}
-          </div>
-          <Badge variant="outline" className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-            <Eye size={12} />
-            <span>{post.views || 0}</span>
-          </Badge>
+        <div className="flex items-center">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={() => handleRate(star)}
+              disabled={isRating}
+              className="focus:outline-none"
+              aria-label={`Rate ${star} stars`}
+            >
+              <Star
+                size={14}
+                className={
+                  rating >= star
+                    ? "text-yellow-500 fill-yellow-500"
+                    : "text-gray-300 dark:text-gray-600"
+                }
+              />
+            </button>
+          ))}
         </div>
         <Link to={`/posts/${post.id}`}>
           <Button variant="secondary" size="sm" className="font-medium">

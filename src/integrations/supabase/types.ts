@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           authorid: string
           authorname: string
+          category: Database["public"]["Enums"]["post_category"]
           content: string
           createdat: string | null
           id: string
@@ -20,11 +21,11 @@ export type Database = {
           thumbnail: string | null
           title: string
           updatedat: string | null
-          views: number | null
         }
         Insert: {
           authorid: string
           authorname: string
+          category?: Database["public"]["Enums"]["post_category"]
           content: string
           createdat?: string | null
           id?: string
@@ -32,11 +33,11 @@ export type Database = {
           thumbnail?: string | null
           title: string
           updatedat?: string | null
-          views?: number | null
         }
         Update: {
           authorid?: string
           authorname?: string
+          category?: Database["public"]["Enums"]["post_category"]
           content?: string
           createdat?: string | null
           id?: string
@@ -44,7 +45,6 @@ export type Database = {
           thumbnail?: string | null
           title?: string
           updatedat?: string | null
-          views?: number | null
         }
         Relationships: []
       }
@@ -80,7 +80,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      post_category:
+        | "All"
+        | "Website Development"
+        | "PR Services"
+        | "Logo Design"
+        | "Brand Images"
+        | "Social Media Management"
+        | "SEO"
+        | "Thought Leadership Pieces"
+        | "Content Creation"
+        | "Crisis Management"
+        | "Blogs & Articles"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -195,6 +206,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      post_category: [
+        "All",
+        "Website Development",
+        "PR Services",
+        "Logo Design",
+        "Brand Images",
+        "Social Media Management",
+        "SEO",
+        "Thought Leadership Pieces",
+        "Content Creation",
+        "Crisis Management",
+        "Blogs & Articles",
+      ],
+    },
   },
 } as const
