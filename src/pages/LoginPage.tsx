@@ -32,10 +32,18 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameChecking, setUsernameChecking] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if Supabase is configured correctly
+    if (!isSupabaseConfigured()) {
+      setConfigError("Supabase is not properly configured. Please connect your project to Supabase.");
+    } else {
+      setConfigError(null);
+    }
+
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
@@ -52,7 +60,7 @@ const LoginPage = () => {
     try {
       // Check if Supabase is properly configured first
       if (!isSupabaseConfigured()) {
-        throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
+        throw new Error("Supabase is not properly configured. Please connect your project to Supabase using the green Supabase button in the top right corner.");
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -69,6 +77,8 @@ const LoginPage = () => {
       
       navigate("/");
     } catch (error: any) {
+      console.error("Login error:", error);
+      
       toast({
         title: "Login failed",
         description: error.message || "An error occurred during login",
@@ -134,7 +144,7 @@ const LoginPage = () => {
     try {
       // Check if Supabase is properly configured first
       if (!isSupabaseConfigured()) {
-        throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
+        throw new Error("Supabase is not properly configured. Please connect your project to Supabase using the green Supabase button in the top right corner.");
       }
       
       // Get the current URL for redirection
@@ -160,6 +170,8 @@ const LoginPage = () => {
       
       navigate("/");
     } catch (error: any) {
+      console.error("Signup error:", error);
+      
       toast({
         title: "Registration failed",
         description: error.message || "An error occurred during registration",
@@ -172,6 +184,14 @@ const LoginPage = () => {
 
   return (
     <div className="container max-w-md mx-auto py-16 px-4">
+      {configError && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+          <p className="font-bold">Configuration Error</p>
+          <p>{configError}</p>
+          <p className="text-sm mt-2">Please connect your project to Supabase using the green Supabase button in the top right corner of the interface.</p>
+        </div>
+      )}
+      
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="login">Login</TabsTrigger>
