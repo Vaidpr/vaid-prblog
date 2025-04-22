@@ -1,4 +1,3 @@
-
 // Mock data for development and preview purposes
 // This simulates the data that would come from the backend API
 
@@ -9,10 +8,11 @@ export interface Post {
   excerpt?: string;
   authorid: string;
   authorname: string;
-  rating: number | null;
-  views: number | null;
   createdat: string | null;
-  updatedat?: string | null;
+  updatedat: string | null;
+  rating?: number;
+  views?: number;
+  thumbnail?: string;
 }
 
 export interface DashboardData {
@@ -31,9 +31,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Learn the fundamentals of React and how to build your first component-based application.",
     authorid: "user1",
     authorname: "Jane Doe",
+    createdat: "2023-04-15T10:30:00Z",
+    updatedat: "2023-04-15T10:30:00Z",
     rating: 4.5,
     views: 450,
-    createdat: "2023-04-15T10:30:00Z"
+    thumbnail: "https://example.com/thumbnail1.jpg"
   },
   {
     id: "2",
@@ -42,9 +44,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Discover powerful TypeScript patterns to enhance your code quality and developer experience.",
     authorid: "user2",
     authorname: "John Smith",
+    createdat: "2023-03-22T14:15:00Z",
+    updatedat: "2023-03-22T14:15:00Z",
     rating: 4.8,
     views: 320,
-    createdat: "2023-03-22T14:15:00Z"
+    thumbnail: "https://example.com/thumbnail2.jpg"
   },
   {
     id: "3",
@@ -53,9 +57,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Master CSS Grid to create responsive and complex layouts with ease.",
     authorid: "user1",
     authorname: "Jane Doe",
+    createdat: "2023-02-10T09:45:00Z",
+    updatedat: "2023-02-10T09:45:00Z",
     rating: 4.2,
     views: 275,
-    createdat: "2023-02-10T09:45:00Z"
+    thumbnail: "https://example.com/thumbnail3.jpg"
   },
   {
     id: "4",
@@ -64,9 +70,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Simplify your asynchronous JavaScript code with Promises and async/await patterns.",
     authorid: "user3",
     authorname: "Alex Johnson",
+    createdat: "2023-01-05T16:20:00Z",
+    updatedat: "2023-01-05T16:20:00Z",
     rating: 4.6,
     views: 410,
-    createdat: "2023-01-05T16:20:00Z"
+    thumbnail: "https://example.com/thumbnail4.jpg"
   },
   {
     id: "5",
@@ -75,9 +83,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Learn how to design and implement robust RESTful APIs using Node.js and Express.",
     authorid: "user2",
     authorname: "John Smith",
+    createdat: "2022-12-18T11:10:00Z",
+    updatedat: "2022-12-18T11:10:00Z",
     rating: 4.4,
     views: 380,
-    createdat: "2022-12-18T11:10:00Z"
+    thumbnail: "https://example.com/thumbnail5.jpg"
   },
   {
     id: "6",
@@ -86,9 +96,11 @@ export const MOCK_POSTS: Post[] = [
     excerpt: "Discover how TailwindCSS can speed up your UI development with its utility-first approach.",
     authorid: "user3",
     authorname: "Alex Johnson",
+    createdat: "2022-11-30T08:45:00Z",
+    updatedat: "2022-11-30T08:45:00Z",
     rating: 4.7,
     views: 290,
-    createdat: "2022-11-30T08:45:00Z"
+    thumbnail: "https://example.com/thumbnail6.jpg"
   }
 ];
 
@@ -105,9 +117,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
       excerpt: "Learn the fundamentals of React and how to build your first component-based application.",
       authorid: "current-user",
       authorname: "Current User",
+      createdat: "2023-04-15T10:30:00Z",
+      updatedat: "2023-04-15T10:30:00Z",
       rating: 4.5,
       views: 450,
-      createdat: "2023-04-15T10:30:00Z"
+      thumbnail: "https://example.com/thumbnail1.jpg"
     },
     {
       id: "3",
@@ -116,9 +130,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
       excerpt: "Master CSS Grid to create responsive and complex layouts with ease.",
       authorid: "current-user",
       authorname: "Current User",
+      createdat: "2023-02-10T09:45:00Z",
+      updatedat: "2023-02-10T09:45:00Z",
       rating: 4.2,
       views: 275,
-      createdat: "2023-02-10T09:45:00Z"
+      thumbnail: "https://example.com/thumbnail3.jpg"
     },
     {
       id: "6",
@@ -127,9 +143,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
       excerpt: "Discover how TailwindCSS can speed up your UI development with its utility-first approach.",
       authorid: "current-user",
       authorname: "Current User",
+      createdat: "2023-01-05T16:20:00Z",
+      updatedat: "2023-01-05T16:20:00Z",
       rating: 4.7,
       views: 320,
-      createdat: "2023-01-05T16:20:00Z"
+      thumbnail: "https://example.com/thumbnail6.jpg"
     }
   ]
 };
@@ -173,9 +191,11 @@ export const mockApi = {
           excerpt: postData.content.substring(0, 150) + "...",
           authorid: "current-user",
           authorname: "Current User",
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString(),
           rating: 0,
           views: 0,
-          createdat: new Date().toISOString()
+          thumbnail: "https://example.com/thumbnail.jpg"
         };
 
         // In a real app, this would be added to the database

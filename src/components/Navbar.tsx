@@ -3,14 +3,16 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, LayoutDashboard, LogIn, LogOut, User as UserIcon, PenSquare, Settings } from "lucide-react";
+import { Menu, X, Home, LogIn, LogOut, User as UserIcon, Settings, BookmarkCheck, Category, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,6 +63,10 @@ const Navbar = () => {
     setIsOpen(false);
   };
 
+  const toggleSearch = () => {
+    setIsSearchVisible(!isSearchVisible);
+  };
+
   return (
     <nav 
       className={`fixed top-0 left-0 right-0 z-50 py-4 px-6 transition-all duration-300 ${
@@ -86,29 +92,35 @@ const Navbar = () => {
               <span>Home</span>
             </Link>
             
-            {currentUser && (
-              <Link 
-                to="/dashboard" 
-                className={`flex items-center gap-1 transition-colors hover:text-primary ${
-                  isActive("/dashboard") ? "text-primary font-medium" : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                <LayoutDashboard size={16} />
-                <span>Dashboard</span>
-              </Link>
-            )}
+            <Link 
+              to="/categories" 
+              className={`flex items-center gap-1 transition-colors hover:text-primary ${
+                isActive("/categories") ? "text-primary font-medium" : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <Category size={16} />
+              <span>Categories</span>
+            </Link>
             
             {currentUser && (
               <Link 
-                to="/create-post" 
+                to="/saved-blogs" 
                 className={`flex items-center gap-1 transition-colors hover:text-primary ${
-                  isActive("/create-post") ? "text-primary font-medium" : "text-gray-700 dark:text-gray-300"
+                  isActive("/saved-blogs") ? "text-primary font-medium" : "text-gray-700 dark:text-gray-300"
                 }`}
               >
-                <PenSquare size={16} />
-                <span>New Post</span>
+                <BookmarkCheck size={16} />
+                <span>Saved Blogs</span>
               </Link>
             )}
+
+            <button
+              onClick={toggleSearch}
+              className="text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary"
+              aria-label="Search"
+            >
+              <Search size={18} />
+            </button>
 
             {currentUser ? (
               <DropdownMenu>
@@ -124,8 +136,14 @@ const Navbar = () => {
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem asChild>
                     <Link to="/dashboard" className="flex items-center gap-2">
-                      <LayoutDashboard size={16}/>
-                      <span>Dashboard</span>
+                      <UserIcon size={16}/>
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/create-post" className="flex items-center gap-2">
+                      <Category size={16}/>
+                      <span>Create Post</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -162,6 +180,16 @@ const Navbar = () => {
           </div>
         </div>
 
+        {isSearchVisible && (
+          <div className="mt-4 transition-all duration-300">
+            <Input 
+              placeholder="Search blogs..." 
+              className="w-full"
+              type="search"
+            />
+          </div>
+        )}
+
         {isOpen && (
           <div className="md:hidden mt-4 bg-white dark:bg-gray-900 shadow-lg rounded-lg p-4 absolute left-4 right-4 top-16 z-50">
             <div className="flex flex-col space-y-4">
@@ -176,34 +204,56 @@ const Navbar = () => {
                 <span>Home</span>
               </Link>
               
-              {currentUser && (
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                    isActive("/dashboard") ? "text-primary font-medium bg-gray-100 dark:bg-gray-800" : "text-gray-700 dark:text-gray-300"
-                  }`}
-                  onClick={handleNavigation}
-                >
-                  <LayoutDashboard size={18} />
-                  <span>Dashboard</span>
-                </Link>
-              )}
+              <Link
+                to="/categories"
+                className={`flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                  isActive("/categories") ? "text-primary font-medium bg-gray-100 dark:bg-gray-800" : "text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={handleNavigation}
+              >
+                <Category size={18} />
+                <span>Categories</span>
+              </Link>
               
               {currentUser && (
                 <Link
-                  to="/create-post"
+                  to="/saved-blogs"
                   className={`flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                    isActive("/create-post") ? "text-primary font-medium bg-gray-100 dark:bg-gray-800" : "text-gray-700 dark:text-gray-300"
+                    isActive("/saved-blogs") ? "text-primary font-medium bg-gray-100 dark:bg-gray-800" : "text-gray-700 dark:text-gray-300"
                   }`}
                   onClick={handleNavigation}
                 >
-                  <PenSquare size={18} />
-                  <span>New Post</span>
+                  <BookmarkCheck size={18} />
+                  <span>Saved Blogs</span>
                 </Link>
               )}
+              
+              <div className="py-2 px-3">
+                <Input 
+                  placeholder="Search blogs..." 
+                  className="w-full"
+                  type="search"
+                />
+              </div>
 
               {currentUser && (
                 <>
+                  <Link 
+                    to="/dashboard" 
+                    className="flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    onClick={handleNavigation}
+                  >
+                    <UserIcon size={18}/>
+                    <span>My Profile</span>
+                  </Link>
+                  <Link 
+                    to="/create-post" 
+                    className="flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    onClick={handleNavigation}
+                  >
+                    <Category size={18}/>
+                    <span>Create Post</span>
+                  </Link>
                   <Link 
                     to="/account-settings" 
                     className="flex items-center gap-2 py-2 px-3 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"

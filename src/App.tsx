@@ -14,6 +14,8 @@ import DashboardPage from "./pages/DashboardPage";
 import CreatePostPage from "./pages/CreatePostPage";
 import NotFound from "./pages/NotFound";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import SavedBlogsPage from "./pages/SavedBlogsPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,15 @@ const App = () => (
             <Route path="/" element={<HomePage />} />
             <Route path="/posts/:id" element={<PostDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route 
+              path="/saved-blogs" 
+              element={
+                <ProtectedRoute>
+                  <SavedBlogsPage />
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/dashboard" 
               element={

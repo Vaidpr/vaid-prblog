@@ -1,18 +1,21 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchPosts } from "@/lib/api";
 import BlogCard from "@/components/BlogCard";
 import { Post } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
-import { PenSquare } from "lucide-react";
-import { auth } from "@/lib/firebase";
+import { Input } from "@/components/ui/input";
+import { PenSquare, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const HomePage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -34,6 +37,7 @@ const HomePage = () => {
         setLoading(true);
         const data = await fetchPosts();
         setPosts(data);
+        setFilteredPosts(data);
       } catch (err) {
         setError("Failed to load blog posts. Please try again later.");
         console.error(err);
@@ -44,6 +48,23 @@ const HomePage = () => {
 
     loadPosts();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredPosts(posts);
+    } else {
+      const filtered = posts.filter(post => 
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.authorname.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredPosts(filtered);
+    }
+  }, [searchQuery, posts]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -56,6 +77,19 @@ const HomePage = () => {
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
             Discover the latest insights, stories, and knowledge from our community of writers and thinkers.
           </p>
+          
+          {/* Search Bar */}
+          <div className="max-w-xl mx-auto mb-8 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              type="search"
+              placeholder="Search for blogs..."
+              className="pl-10 py-6 text-base shadow-md"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
+          
           <div className="flex justify-center gap-4">
             {isAuthenticated ? (
               <Link to="/create-post">
@@ -91,13 +125,13 @@ const HomePage = () => {
           <div className="text-center p-8 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <p className="text-red-600 dark:text-red-400">{error}</p>
           </div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400">No posts available at the moment.</p>
+            <p className="text-gray-600 dark:text-gray-400">No posts matching your search criteria.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <BlogCard key={post.id} post={post} />
             ))}
           </div>

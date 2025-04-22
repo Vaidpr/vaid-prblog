@@ -1,91 +1,57 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { validateForm } from "@/utils/formValidation";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
-  const { toast } = useToast();
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const { toast } = useToast();
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // User is already logged in, redirect to home or previous location
-        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-        navigate(from, { replace: true });
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate("/");
       }
     };
-    
-    checkUser();
-    
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-        navigate(from, { replace: true });
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [location, navigate]);
-
-  // Get redirect path from location state or default to home
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-
-  // Validate form inputs
-  const validateInputs = () => {
-    const errors = validateForm({ email, password });
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateInputs()) return;
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-
+      
       toast({
-        title: "Success",
-        description: "You have been logged in successfully",
+        title: "Login successful",
+        description: "Welcome back!",
       });
-      navigate(from, { replace: true });
+      
+      navigate("/");
     } catch (error: any) {
-      let errorMessage = "Invalid email or password";
-      
-      if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: "Login failed",
-        description: errorMessage,
+        description: error.message || "An error occurred during login",
         variant: "destructive",
       });
     } finally {
@@ -93,37 +59,93 @@ const LoginPage = () => {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.length < 3) return;
+    
+    setUsernameChecking(true);
+    
+    try {
+      // Check if username exists in the profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      // Username is available if no data is returned
+      setUsernameAvailable(data === null);
+    } catch (error) {
+      console.error("Error checking username:", error);
+      setUsernameAvailable(null);
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    
+    // Debounce the check
+    const timeoutId = setTimeout(() => {
+      if (value.length >= 3) {
+        checkUsernameAvailability(value);
+      } else {
+        setUsernameAvailable(null);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateInputs()) return;
+    if (!usernameAvailable) {
+      toast({
+        title: "Registration failed",
+        description: "Username is already taken or invalid",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        }
       });
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Account created successfully. Please check your email to confirm your account.",
-      });
-    } catch (error: any) {
-      let errorMessage = "Failed to create account";
+      if (authError) throw authError;
       
-      if (error.message) {
-        errorMessage = error.message;
+      if (authData.user) {
+        // 2. Create the profile with username
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{ 
+            id: authData.user.id,
+            username: username,
+            email: email
+          }]);
+        
+        if (profileError) throw profileError;
       }
       
       toast({
+        title: "Registration successful",
+        description: "Your account has been created!",
+      });
+      
+      navigate("/");
+    } catch (error: any) {
+      toast({
         title: "Registration failed",
-        description: errorMessage,
+        description: error.message || "An error occurred during registration",
         variant: "destructive",
       });
     } finally {
@@ -132,26 +154,19 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container max-w-md mx-auto px-4 py-16">
-      <div className="mb-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
-          <ArrowLeft size={16} />
-          <span>Back to Home</span>
-        </Link>
-      </div>
-      
+    <div className="container max-w-md mx-auto py-16 px-4">
       <Tabs defaultValue="login" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="register">Register</TabsTrigger>
         </TabsList>
         
         <TabsContent value="login">
-          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Login to Vaidpr</CardTitle>
-              <CardDescription className="text-center">
-                Enter your credentials to access your account
+              <CardTitle>Login</CardTitle>
+              <CardDescription>
+                Sign in to your account to continue
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleLogin}>
@@ -161,40 +176,39 @@ const LoginPage = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder="name@example.com"
+                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={validationErrors.email ? "border-red-500" : ""}
                   />
-                  {validationErrors.email && (
-                    <p className="text-xs text-red-500">{validationErrors.email}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <a 
+                      href="#" 
+                      className="text-xs text-primary hover:underline"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={validationErrors.password ? "border-red-500" : ""}
                   />
-                  {validationErrors.password && (
-                    <p className="text-xs text-red-500">{validationErrors.password}</p>
-                  )}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
-                      <span>Logging in...</span>
-                    </div>
-                  ) : (
-                    "Login"
-                  )}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </CardFooter>
             </form>
@@ -202,57 +216,75 @@ const LoginPage = () => {
         </TabsContent>
         
         <TabsContent value="register">
-          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Create Account</CardTitle>
-              <CardDescription className="text-center">
-                Join Vaidpr and start sharing your stories
+              <CardTitle>Create Account</CardTitle>
+              <CardDescription>
+                Enter your information to create an account
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleRegister}>
+            <form onSubmit={handleSignUp}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="your.email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={validationErrors.email ? "border-red-500" : ""}
+                    id="username"
+                    placeholder="username"
+                    required
+                    minLength={3}
+                    value={username}
+                    onChange={handleUsernameChange}
+                    className={
+                      usernameAvailable === true
+                        ? "border-green-500"
+                        : usernameAvailable === false
+                        ? "border-red-500"
+                        : ""
+                    }
                   />
-                  {validationErrors.email && (
-                    <p className="text-xs text-red-500">{validationErrors.email}</p>
+                  {usernameChecking && (
+                    <p className="text-xs text-gray-500">Checking availability...</p>
+                  )}
+                  {!usernameChecking && usernameAvailable === true && (
+                    <p className="text-xs text-green-500">Username is available</p>
+                  )}
+                  {!usernameChecking && usernameAvailable === false && (
+                    <p className="text-xs text-red-500">Username is already taken</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Password</Label>
+                  <Label htmlFor="email-register">Email</Label>
                   <Input
-                    id="register-password"
+                    id="email-register"
+                    type="email"
+                    placeholder="name@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-register">Password</Label>
+                  <Input
+                    id="password-register"
                     type="password"
-                    placeholder="••••••••"
+                    required
+                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={validationErrors.password ? "border-red-500" : ""}
                   />
-                  {validationErrors.password && (
-                    <p className="text-xs text-red-500">{validationErrors.password}</p>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Password must be at least 6 characters long
                   </p>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading || usernameAvailable === false}
+                >
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </CardFooter>
             </form>

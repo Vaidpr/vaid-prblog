@@ -70,6 +70,68 @@ export const createPost = async (postData: { title: string; content: string; thu
   return mapPost(data);
 };
 
+// Rate a post
+export const ratePost = async (postId: string, rating: number): Promise<Post> => {
+  // Ensure rating is between 1 and 5
+  const validRating = Math.min(Math.max(rating, 1), 5);
+  
+  // First get the current rating
+  const { data: currentPost, error: fetchError } = await supabase
+    .from("posts")
+    .select("rating, views")
+    .eq("id", postId)
+    .maybeSingle();
+    
+  if (fetchError) {
+    console.error(`Error fetching post ${postId} from Supabase:`, fetchError);
+    throw fetchError;
+  }
+  
+  // Calculate new rating (for now a simple average of the current and new rating)
+  // In a real app, you'd store individual ratings and calculate the average
+  const currentRating = currentPost?.rating || 0;
+  const newRating = currentRating > 0 ? (currentRating + validRating) / 2 : validRating;
+  
+  // Update the post with the new rating
+  const { data, error } = await supabase
+    .from("posts")
+    .update({ rating: newRating })
+    .eq("id", postId)
+    .select()
+    .maybeSingle();
+  
+  if (error) {
+    console.error(`Error rating post ${postId} in Supabase:`, error);
+    throw error;
+  }
+  
+  return mapPost(data);
+};
+
+// Save a post to user's bookmarks
+export const savePost = async (postId: string): Promise<void> => {
+  // For now, we'll use localStorage to save bookmarks
+  // In a real app, you would store this in Supabase
+  const savedPosts = JSON.parse(localStorage.getItem("savedPosts") || "[]");
+  if (!savedPosts.includes(postId)) {
+    savedPosts.push(postId);
+    localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
+  }
+};
+
+// Remove a post from user's bookmarks
+export const unsavePost = async (postId: string): Promise<void> => {
+  const savedPosts = JSON.parse(localStorage.getItem("savedPosts") || "[]");
+  const updatedPosts = savedPosts.filter((id: string) => id !== postId);
+  localStorage.setItem("savedPosts", JSON.stringify(updatedPosts));
+};
+
+// Check if a post is saved
+export const isPostSaved = (postId: string): boolean => {
+  const savedPosts = JSON.parse(localStorage.getItem("savedPosts") || "[]");
+  return savedPosts.includes(postId);
+};
+
 // Fetch user dashboard data
 export const fetchDashboardData = async (): Promise<DashboardData> => {
   // Get current user session
