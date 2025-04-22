@@ -65,13 +65,16 @@ const LoginPage = () => {
     setUsernameChecking(true);
     
     try {
-      // Since we don't have a profiles table yet, we'll simulate the check
-      // Later, when we add the profiles table, this will be replaced with a real check
-      // Simulate delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
       
-      // For now, we'll assume all usernames are available
-      setUsernameAvailable(true);
+      if (error) throw error;
+      
+      // Username is available if no data is returned
+      setUsernameAvailable(data === null);
     } catch (error) {
       console.error("Error checking username:", error);
       setUsernameAvailable(null);
@@ -120,9 +123,16 @@ const LoginPage = () => {
       if (authError) throw authError;
       
       if (authData.user) {
-        // 2. For now, we'll just store the username in localStorage
-        // Later, when we have a profiles table, we'll update this
-        localStorage.setItem(`user_${authData.user.id}_username`, username);
+        // 2. Create the profile with username
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{ 
+            id: authData.user.id,
+            username: username,
+            email: email
+          }]);
+        
+        if (profileError) throw profileError;
       }
       
       toast({
