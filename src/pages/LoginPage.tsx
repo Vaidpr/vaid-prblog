@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { updateUserProfile } from "@/lib/api";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -110,13 +112,17 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // Get the current URL for redirection
+      const redirectUrl = window.location.origin;
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             username: username,
-          }
+          },
+          emailRedirectTo: redirectUrl
         }
       });
 

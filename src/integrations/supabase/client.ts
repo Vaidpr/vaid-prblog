@@ -18,8 +18,11 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'pkce',
-      // Set redirect URLs to current origin
-      redirectTo: currentUrl
+    },
+    global: {
+      headers: {
+        'X-Supabase-Auth-Redirect': currentUrl
+      }
     }
   }
 );
