@@ -10,21 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/api";
 
-// Helper function to check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  // Get the project URL from the environment or window
-  const supabaseUrl = (window as any).SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || '';
-  const supabaseAnonKey = (window as any).SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-  
-  // Check if the URL and key are valid (not empty and not placeholders)
-  return (
-    supabaseUrl &&
-    supabaseAnonKey &&
-    !supabaseUrl.includes('placeholder-project') &&
-    !supabaseAnonKey.includes('placeholder-key')
-  );
-};
-
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,18 +17,10 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameChecking, setUsernameChecking] = useState(false);
-  const [configError, setConfigError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if Supabase is configured correctly
-    if (!isSupabaseConfigured()) {
-      setConfigError("Supabase is not properly configured. Please connect your project to Supabase.");
-    } else {
-      setConfigError(null);
-    }
-
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
@@ -58,11 +35,6 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Check if Supabase is properly configured first
-      if (!isSupabaseConfigured()) {
-        throw new Error("Supabase is not properly configured. Please connect your project to Supabase using the green Supabase button in the top right corner.");
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -142,11 +114,6 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Check if Supabase is properly configured first
-      if (!isSupabaseConfigured()) {
-        throw new Error("Supabase is not properly configured. Please connect your project to Supabase using the green Supabase button in the top right corner.");
-      }
-      
       // Get the current URL for redirection
       const redirectUrl = window.location.origin;
       
@@ -184,14 +151,6 @@ const LoginPage = () => {
 
   return (
     <div className="container max-w-md mx-auto py-16 px-4">
-      {configError && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-          <p className="font-bold">Configuration Error</p>
-          <p>{configError}</p>
-          <p className="text-sm mt-2">Please connect your project to Supabase using the green Supabase button in the top right corner of the interface.</p>
-        </div>
-      )}
-      
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="login">Login</TabsTrigger>
