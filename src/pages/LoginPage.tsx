@@ -35,6 +35,11 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // Check if Supabase is properly configured first
+      if (!supabase.supabaseUrl || supabase.supabaseUrl.includes('placeholder-project')) {
+        throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -112,6 +117,11 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // Check if Supabase is properly configured first
+      if (!supabase.supabaseUrl || supabase.supabaseUrl.includes('placeholder-project')) {
+        throw new Error("Supabase is not properly configured. Please connect your project to Supabase.");
+      }
+      
       // Get the current URL for redirection
       const redirectUrl = window.location.origin;
       

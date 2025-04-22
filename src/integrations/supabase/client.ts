@@ -27,7 +27,7 @@ export const supabase = createClient(
   }
 );
 
-// Console warning to help debugging
+// Better console message to help debugging
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
     "Supabase URL or Anonymous Key is missing. Please connect your project to Supabase using the green Supabase button in the top right of the Lovable interface."
