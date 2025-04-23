@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Post, DashboardData } from "@/lib/mockData";
@@ -17,6 +18,7 @@ function mapPost(data: any): Post {
     rating: data.rating ?? 0,
     thumbnail: data.thumbnail ?? "",
     category: data.category || "All",
+    visibility: data.visibility || "public",
   };
 }
 
@@ -226,5 +228,94 @@ export const deletePost = async (postId: string): Promise<void> => {
   if (error) {
     console.error(`Error deleting post ${postId}:`, error);
     throw error;
+  }
+};
+
+// New function to get blog recommendations
+export const getRecommendations = async (): Promise<Post[]> => {
+  // Get user's search history from localStorage
+  const searchHistory = JSON.parse(localStorage.getItem("searchHistory") || "[]");
+  
+  // Get user session to check if logged in
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  let recommendedPosts: Post[] = [];
+  
+  try {
+    // If user has search history, use it for recommendations
+    if (searchHistory.length > 0) {
+      // Get the most recent 3 search terms
+      const recentSearches = searchHistory.slice(-3);
+      
+      // For each search term, find matching posts
+      for (const searchTerm of recentSearches) {
+        const { data, error } = await supabase
+          .from("posts")
+          .select("*")
+          .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+          .eq("visibility", "public")
+          .limit(3);
+          
+        if (!error && data) {
+          recommendedPosts = [...recommendedPosts, ...data.map(mapPost)];
+        }
+      }
+    }
+    
+    // If we don't have enough recommendations yet or no search history,
+    // add some based on top-rated posts
+    if (recommendedPosts.length < 3) {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("visibility", "public")
+        .order("rating", { ascending: false })
+        .limit(5);
+        
+      if (!error && data) {
+        // Add these posts to our recommendations, avoiding duplicates
+        const existingIds = recommendedPosts.map(p => p.id);
+        const newPosts = data
+          .filter(post => !existingIds.includes(post.id))
+          .map(mapPost);
+          
+        recommendedPosts = [...recommendedPosts, ...newPosts];
+      }
+    }
+    
+    // If user is logged in, try to get posts from their followed categories
+    if (session?.user) {
+      // Get user's preferred categories (for now we'll use localStorage, in a real app this would be stored in the database)
+      const preferredCategories = JSON.parse(localStorage.getItem("preferredCategories") || "[]");
+      
+      if (preferredCategories.length > 0) {
+        const { data, error } = await supabase
+          .from("posts")
+          .select("*")
+          .in("category", preferredCategories)
+          .eq("visibility", "public")
+          .limit(3);
+          
+        if (!error && data) {
+          // Add these posts to our recommendations, avoiding duplicates
+          const existingIds = recommendedPosts.map(p => p.id);
+          const newPosts = data
+            .filter(post => !existingIds.includes(post.id))
+            .map(mapPost);
+            
+          recommendedPosts = [...recommendedPosts, ...newPosts];
+        }
+      }
+    }
+    
+    // Remove duplicates if any and limit to 6 recommendations
+    const uniquePosts = recommendedPosts.filter((post, index, self) =>
+      index === self.findIndex((p) => p.id === post.id)
+    );
+    
+    return uniquePosts.slice(0, 6);
+  } catch (err) {
+    console.error("Error fetching recommendations:", err);
+    return [];
   }
 };

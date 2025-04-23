@@ -1,3 +1,4 @@
+
 export interface DashboardData {
   totalPosts: number;
   totalViews: number;
@@ -17,5 +18,6 @@ export interface Post {
   rating?: number;
   views?: number;
   thumbnail?: string;
-  category: string; // Add category property
+  category: string;
+  visibility?: string; // Add visibility property
 }
